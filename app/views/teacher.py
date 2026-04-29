@@ -1,55 +1,64 @@
-import tkinter as tk
+import customtkinter as ctk
 from tkinter import ttk, messagebox
-from app.utils.styles import COLORS, FONTS
+from app.utils.styles import FONTS
 from app.services.teacher_service import TeacherService
 
-class TeacherView(tk.Frame):
+class TeacherView(ctk.CTkFrame):
     def __init__(self, parent, controller):
-        super().__init__(parent)
+        super().__init__(parent, fg_color="transparent")
         self.controller = controller
-        self.configure(bg=COLORS["background"])
         
+        self.grid_rowconfigure(2, weight=1)
+        self.grid_columnconfigure(0, weight=1)
+
         self.create_widgets()
 
     def create_widgets(self):
         # Header
-        header_frame = tk.Frame(self, bg=COLORS["primary"], height=60)
-        header_frame.pack(fill=tk.X)
-        tk.Button(header_frame, text="Back", command=lambda: self.controller.show_frame("DashboardView")).pack(side=tk.LEFT, padx=10, pady=15)
-        tk.Label(header_frame, text="Manage Teachers", font=FONTS["header"], bg=COLORS["primary"], fg=COLORS["text_light"]).pack(side=tk.LEFT, padx=20, pady=15)
+        header_frame = ctk.CTkFrame(self, fg_color="transparent")
+        header_frame.grid(row=0, column=0, sticky="ew", padx=30, pady=(30, 10))
+        
+        ctk.CTkLabel(header_frame, text="Manage Teachers", font=FONTS["title"]).pack(side="left")
+        ctk.CTkButton(header_frame, text="Back to Dashboard", command=lambda: self.controller.show_frame("DashboardView"),
+                      fg_color="transparent", border_width=1, text_color=("gray10", "gray90")).pack(side="right")
 
         # Form Frame
-        form_frame = tk.Frame(self, bg=COLORS["background"])
-        form_frame.pack(pady=20)
+        form_frame = ctk.CTkFrame(self, corner_radius=15)
+        form_frame.grid(row=1, column=0, sticky="ew", padx=30, pady=10)
 
-        tk.Label(form_frame, text="Name:", bg=COLORS["background"]).grid(row=0, column=0, padx=5, pady=5)
-        self.name_entry = tk.Entry(form_frame)
-        self.name_entry.grid(row=0, column=1, padx=5, pady=5)
+        self.name_entry = ctk.CTkEntry(form_frame, placeholder_text="Teacher Name", width=200)
+        self.name_entry.grid(row=0, column=0, padx=20, pady=20)
 
-        tk.Label(form_frame, text="Subject:", bg=COLORS["background"]).grid(row=0, column=2, padx=5, pady=5)
-        self.subject_entry = tk.Entry(form_frame)
-        self.subject_entry.grid(row=0, column=3, padx=5, pady=5)
+        self.subject_entry = ctk.CTkEntry(form_frame, placeholder_text="Subject", width=200)
+        self.subject_entry.grid(row=0, column=1, padx=20, pady=20)
 
-        btn_frame = tk.Frame(self, bg=COLORS["background"])
-        btn_frame.pack(pady=10)
-
-        tk.Button(btn_frame, text="Add", command=self.add_teacher, bg=COLORS["success"], fg=COLORS["text_light"]).pack(side=tk.LEFT, padx=10)
-        tk.Button(btn_frame, text="Update", command=self.update_teacher, bg=COLORS["warning"]).pack(side=tk.LEFT, padx=10)
-        tk.Button(btn_frame, text="Delete", command=self.delete_teacher, bg=COLORS["error"], fg=COLORS["text_light"]).pack(side=tk.LEFT, padx=10)
-        tk.Button(btn_frame, text="Clear", command=self.clear_form).pack(side=tk.LEFT, padx=10)
+        ctk.CTkButton(form_frame, text="Add", command=self.add_teacher, width=100).grid(row=0, column=2, padx=10)
+        ctk.CTkButton(form_frame, text="Update", command=self.update_teacher, width=100, fg_color="#ffb900", hover_color="#cc9400", text_color="black").grid(row=0, column=3, padx=10)
+        ctk.CTkButton(form_frame, text="Delete", command=self.delete_teacher, width=100, fg_color="#d83b01", hover_color="#a82d00").grid(row=0, column=4, padx=10)
+        ctk.CTkButton(form_frame, text="Clear", command=self.clear_form, width=100, fg_color="gray", hover_color="darkgray").grid(row=0, column=5, padx=10)
 
         # Treeview
+        table_frame = ctk.CTkFrame(self, corner_radius=15)
+        table_frame.grid(row=2, column=0, sticky="nsew", padx=30, pady=(10, 30))
+        table_frame.pack_propagate(False)
+
+        style = ttk.Style()
+        style.theme_use("default")
+        style.configure("Treeview", background="#2b2b2b", foreground="white", rowheight=30, fieldbackground="#2b2b2b", borderwidth=0)
+        style.map("Treeview", background=[("selected", "#1f538d")])
+        style.configure("Treeview.Heading", background="#1f538d", foreground="white", font=FONTS["body"])
+
         columns = ("id", "name", "subject")
-        self.tree = ttk.Treeview(self, columns=columns, show="headings", height=10)
+        self.tree = ttk.Treeview(table_frame, columns=columns, show="headings")
         self.tree.heading("id", text="ID")
         self.tree.heading("name", text="Name")
         self.tree.heading("subject", text="Subject")
         
-        self.tree.column("id", width=50)
-        self.tree.column("name", width=200)
-        self.tree.column("subject", width=150)
+        self.tree.column("id", width=50, anchor="center")
+        self.tree.column("name", width=300)
+        self.tree.column("subject", width=300)
 
-        self.tree.pack(pady=20, padx=20, fill=tk.BOTH, expand=True)
+        self.tree.pack(fill="both", expand=True, padx=2, pady=2)
         self.tree.bind("<<TreeviewSelect>>", self.on_select)
 
     def refresh(self):
@@ -57,7 +66,7 @@ class TeacherView(tk.Frame):
             self.tree.delete(item)
         teachers = TeacherService.get_all_teachers()
         for t in teachers:
-            self.tree.insert("", tk.END, values=(t.id, t.name, t.subject))
+            self.tree.insert("", "end", values=(t.id, t.name, t.subject))
         self.clear_form()
 
     def add_teacher(self):
@@ -70,7 +79,6 @@ class TeacherView(tk.Frame):
 
         success, msg = TeacherService.add_teacher(name, subject)
         if success:
-            messagebox.showinfo("Success", msg)
             self.refresh()
             self.controller.frames["DashboardView"].update_dashboard()
         else:
@@ -94,7 +102,6 @@ class TeacherView(tk.Frame):
         
         success, msg = TeacherService.update_teacher(teacher_id, name, subject)
         if success:
-            messagebox.showinfo("Success", msg)
             self.refresh()
         else:
             messagebox.showerror("Error", msg)
@@ -111,7 +118,6 @@ class TeacherView(tk.Frame):
             
             success, msg = TeacherService.delete_teacher(teacher_id)
             if success:
-                messagebox.showinfo("Success", msg)
                 self.refresh()
                 self.controller.frames["DashboardView"].update_dashboard()
             else:
@@ -127,5 +133,5 @@ class TeacherView(tk.Frame):
             self.subject_entry.insert(0, values[2])
 
     def clear_form(self):
-        self.name_entry.delete(0, tk.END)
-        self.subject_entry.delete(0, tk.END)
+        self.name_entry.delete(0, 'end')
+        self.subject_entry.delete(0, 'end')

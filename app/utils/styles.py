@@ -1,18 +1,25 @@
-# Standard colors and fonts for the application
+import customtkinter as ctk
+
+# Configure CustomTkinter Appearance
+ctk.set_appearance_mode("Dark")  # Modes: "System" (standard), "Dark", "Light"
+ctk.set_default_color_theme("blue")  # Themes: "blue" (standard), "green", "dark-blue"
+
+# We can still keep standard colors for custom drawing or standard tk fallback if needed
 COLORS = {
-    "primary": "#4A90E2",
-    "secondary": "#50E3C2",
-    "background": "#F5F7FA",
-    "text": "#333333",
-    "text_light": "#FFFFFF",
-    "error": "#D0021B",
-    "success": "#7ED321",
-    "warning": "#F5A623"
+    "primary": "#1f538d",
+    "secondary": "#2cc985",
+    "background": "#242424",
+    "text": "#ffffff",
+    "text_light": "#ffffff",
+    "error": "#d83b01",
+    "success": "#107c10",
+    "warning": "#ffb900"
 }
 
+# Fonts for CTk widgets
 FONTS = {
-    "title": ("Helvetica", 24, "bold"),
-    "header": ("Helvetica", 18, "bold"),
-    "body": ("Helvetica", 12),
-    "button": ("Helvetica", 12, "bold")
+    "title": ("Roboto", 32, "bold"),
+    "header": ("Roboto", 24, "bold"),
+    "body": ("Roboto", 14),
+    "button": ("Roboto", 14, "bold")
 }

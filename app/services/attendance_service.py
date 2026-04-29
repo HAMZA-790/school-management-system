@@ -10,11 +10,11 @@ class AttendanceService:
             cursor = conn.cursor()
             
             # Check if attendance already marked for the day
-            cursor.execute("SELECT id FROM attendance WHERE student_id=%s AND date=%s", (student_id, date))
+            cursor.execute("SELECT id FROM attendance WHERE student_id=? AND date=?", (student_id, date))
             if cursor.fetchone():
                 return False, "Attendance already marked for this date"
 
-            query = "INSERT INTO attendance (student_id, date, status) VALUES (%s, %s, %s)"
+            query = "INSERT INTO attendance (student_id, date, status) VALUES (?, ?, ?)"
             cursor.execute(query, (student_id, date, status))
             conn.commit()
             return True, "Attendance marked successfully"
@@ -29,7 +29,7 @@ class AttendanceService:
         try:
             conn = get_db_connection()
             if not conn: return []
-            cursor = conn.cursor(dictionary=True)
+            cursor = conn.cursor()
             query = """
             SELECT a.id, s.name as student_name, a.date, a.status 
             FROM attendance a 
@@ -37,7 +37,8 @@ class AttendanceService:
             ORDER BY a.date DESC
             """
             cursor.execute(query)
-            return cursor.fetchall()
+            columns = [column[0] for column in cursor.description]
+            return [dict(zip(columns, row)) for row in cursor.fetchall()]
         except Exception as e:
             logger.error(f"Error fetching attendance: {e}")
             return []

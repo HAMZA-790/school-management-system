@@ -1,62 +1,78 @@
-import tkinter as tk
-from app.utils.styles import COLORS, FONTS
+import customtkinter as ctk
+from app.utils.styles import FONTS
 from app.services.student_service import StudentService
 from app.services.teacher_service import TeacherService
 from app.services.fee_service import FeeService
 
-class DashboardView(tk.Frame):
+class DashboardView(ctk.CTkFrame):
     def __init__(self, parent, controller):
-        super().__init__(parent)
+        super().__init__(parent, fg_color="transparent")
         self.controller = controller
-        self.configure(bg=COLORS["background"])
+
+        # Grid configuration
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(1, weight=1)
 
         self.create_widgets()
 
     def create_widgets(self):
-        # Header
-        header_frame = tk.Frame(self, bg=COLORS["primary"], height=60)
-        header_frame.pack(fill=tk.X)
-        tk.Label(header_frame, text="Dashboard", font=FONTS["header"], bg=COLORS["primary"], fg=COLORS["text_light"]).pack(pady=15)
+        # 1. Sidebar (Navigation)
+        sidebar_frame = ctk.CTkFrame(self, width=250, corner_radius=0)
+        sidebar_frame.grid(row=0, column=0, sticky="nsew")
+        sidebar_frame.grid_rowconfigure(7, weight=1) # Push logout to bottom
 
-        # Metrics Frame
-        self.metrics_frame = tk.Frame(self, bg=COLORS["background"])
-        self.metrics_frame.pack(pady=20, fill=tk.X, padx=20)
-
-        self.total_students_label = tk.Label(self.metrics_frame, text="Total Students: 0", font=FONTS["body"], bg=COLORS["background"])
-        self.total_students_label.grid(row=0, column=0, padx=20)
-
-        self.total_teachers_label = tk.Label(self.metrics_frame, text="Total Teachers: 0", font=FONTS["body"], bg=COLORS["background"])
-        self.total_teachers_label.grid(row=0, column=1, padx=20)
-
-        self.total_fees_label = tk.Label(self.metrics_frame, text="Total Fees: $0.00", font=FONTS["body"], bg=COLORS["background"])
-        self.total_fees_label.grid(row=0, column=2, padx=20)
-
-        # Navigation Buttons
-        nav_frame = tk.Frame(self, bg=COLORS["background"])
-        nav_frame.pack(pady=30)
+        logo_label = ctk.CTkLabel(sidebar_frame, text="Admin Panel", font=FONTS["header"])
+        logo_label.grid(row=0, column=0, padx=20, pady=(30, 40))
 
         buttons = [
-            ("Manage Students", "StudentView"),
-            ("Manage Teachers", "TeacherView"),
-            ("Mark Attendance", "AttendanceView"),
-            ("Manage Fees", "FeeView"),
-            ("Reports", "ReportView"),
-            ("Logout", "LoginView")
+            ("Manage Students", "StudentView", 1),
+            ("Manage Teachers", "TeacherView", 2),
+            ("Mark Attendance", "AttendanceView", 3),
+            ("Manage Fees", "FeeView", 4),
+            ("System Reports", "ReportView", 5),
         ]
 
-        for i, (text, view_name) in enumerate(buttons):
-            btn = tk.Button(nav_frame, text=text, font=FONTS["button"], bg=COLORS["secondary"], fg=COLORS["text_light"], width=20, command=lambda v=view_name: self.navigate(v))
-            btn.grid(row=i//2, column=i%2, padx=15, pady=15)
+        for text, view_name, r in buttons:
+            btn = ctk.CTkButton(sidebar_frame, text=text, command=lambda v=view_name: self.navigate(v), 
+                                width=200, height=40, anchor="w", fg_color="transparent", 
+                                text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"))
+            btn.grid(row=r, column=0, padx=20, pady=10)
+
+        # Logout Button
+        logout_btn = ctk.CTkButton(sidebar_frame, text="Logout", command=lambda: self.controller.show_frame("LoginView"),
+                                   width=200, height=40, fg_color="#d83b01", hover_color="#a82d00")
+        logout_btn.grid(row=8, column=0, padx=20, pady=30)
+
+        # 2. Main Content Area
+        self.main_frame = ctk.CTkFrame(self, fg_color="transparent")
+        self.main_frame.grid(row=0, column=1, sticky="nsew", padx=30, pady=30)
+        self.main_frame.grid_columnconfigure((0, 1, 2), weight=1)
+
+        header = ctk.CTkLabel(self.main_frame, text="Dashboard Overview", font=FONTS["title"])
+        header.grid(row=0, column=0, columnspan=3, sticky="w", pady=(0, 30))
+
+        # Metric Cards
+        self.students_card, self.students_val = self.create_metric_card(self.main_frame, "Total Students", "0", 0, 0)
+        self.teachers_card, self.teachers_val = self.create_metric_card(self.main_frame, "Total Teachers", "0", 0, 1)
+        self.fees_card, self.fees_val = self.create_metric_card(self.main_frame, "Fees Collected", "$0", 0, 2)
+
+    def create_metric_card(self, parent, title, value, row, col):
+        card = ctk.CTkFrame(parent, corner_radius=15)
+        card.grid(row=row+1, column=col, sticky="nsew", padx=10, pady=10)
+        
+        ctk.CTkLabel(card, text=title, font=FONTS["body"], text_color="gray").pack(pady=(20, 5))
+        val_label = ctk.CTkLabel(card, text=value, font=("Roboto", 36, "bold"))
+        val_label.pack(pady=(0, 20))
+        return card, val_label
 
     def update_dashboard(self):
-        # Update metrics dynamically
         total_students = StudentService.get_total_students()
         total_teachers = TeacherService.get_total_teachers()
         total_fees = FeeService.get_total_fees()
 
-        self.total_students_label.config(text=f"Total Students: {total_students}")
-        self.total_teachers_label.config(text=f"Total Teachers: {total_teachers}")
-        self.total_fees_label.config(text=f"Total Fees: ${total_fees:.2f}")
+        self.students_val.configure(text=str(total_students))
+        self.teachers_val.configure(text=str(total_teachers))
+        self.fees_val.configure(text=f"${total_fees:,.2f}")
 
     def navigate(self, view_name):
         if view_name in self.controller.frames and hasattr(self.controller.frames[view_name], 'refresh'):

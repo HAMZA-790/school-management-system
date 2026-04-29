@@ -1,44 +1,51 @@
-import tkinter as tk
-from app.utils.styles import COLORS, FONTS
+import customtkinter as ctk
+from app.utils.styles import FONTS
 from app.services.student_service import StudentService
 from app.services.teacher_service import TeacherService
 from app.services.fee_service import FeeService
 
-class ReportView(tk.Frame):
+class ReportView(ctk.CTkFrame):
     def __init__(self, parent, controller):
-        super().__init__(parent)
+        super().__init__(parent, fg_color="transparent")
         self.controller = controller
-        self.configure(bg=COLORS["background"])
         
+        self.grid_rowconfigure(2, weight=1)
+        self.grid_columnconfigure(0, weight=1)
+
         self.create_widgets()
 
     def create_widgets(self):
         # Header
-        header_frame = tk.Frame(self, bg=COLORS["primary"], height=60)
-        header_frame.pack(fill=tk.X)
-        tk.Button(header_frame, text="Back", command=lambda: self.controller.show_frame("DashboardView")).pack(side=tk.LEFT, padx=10, pady=15)
-        tk.Label(header_frame, text="System Reports", font=FONTS["header"], bg=COLORS["primary"], fg=COLORS["text_light"]).pack(side=tk.LEFT, padx=20, pady=15)
+        header_frame = ctk.CTkFrame(self, fg_color="transparent")
+        header_frame.grid(row=0, column=0, sticky="ew", padx=30, pady=(30, 10))
+        
+        ctk.CTkLabel(header_frame, text="System Reports", font=FONTS["title"]).pack(side="left")
+        ctk.CTkButton(header_frame, text="Back to Dashboard", command=lambda: self.controller.show_frame("DashboardView"),
+                      fg_color="transparent", border_width=1, text_color=("gray10", "gray90")).pack(side="right")
 
         # Report Content
-        self.report_frame = tk.Frame(self, bg=COLORS["background"])
-        self.report_frame.pack(pady=40)
+        self.report_frame = ctk.CTkFrame(self, corner_radius=20)
+        self.report_frame.grid(row=1, column=0, sticky="nsew", padx=30, pady=30)
+        
+        # Spacer
+        ctk.CTkLabel(self.report_frame, text="").pack(pady=20)
 
-        self.students_label = tk.Label(self.report_frame, text="Total Enrolled Students: 0", font=FONTS["header"], bg=COLORS["background"])
-        self.students_label.pack(pady=10)
+        self.students_label = ctk.CTkLabel(self.report_frame, text="Total Enrolled Students: 0", font=FONTS["header"])
+        self.students_label.pack(pady=20)
 
-        self.teachers_label = tk.Label(self.report_frame, text="Total Teachers: 0", font=FONTS["header"], bg=COLORS["background"])
-        self.teachers_label.pack(pady=10)
+        self.teachers_label = ctk.CTkLabel(self.report_frame, text="Total Teachers: 0", font=FONTS["header"])
+        self.teachers_label.pack(pady=20)
 
-        self.fees_label = tk.Label(self.report_frame, text="Total Fees Collected: $0.00", font=FONTS["header"], bg=COLORS["background"], fg=COLORS["success"])
-        self.fees_label.pack(pady=10)
+        self.fees_label = ctk.CTkLabel(self.report_frame, text="Total Fees Collected: $0.00", font=FONTS["header"], text_color="#2cc985")
+        self.fees_label.pack(pady=20)
 
-        tk.Button(self.report_frame, text="Refresh Data", font=FONTS["button"], command=self.refresh, bg=COLORS["secondary"], fg=COLORS["text_light"]).pack(pady=30)
+        ctk.CTkButton(self.report_frame, text="Refresh Data", font=FONTS["button"], command=self.refresh, width=200, height=45, corner_radius=10).pack(pady=40)
 
     def refresh(self):
         total_students = StudentService.get_total_students()
         total_teachers = TeacherService.get_total_teachers()
         total_fees = FeeService.get_total_fees()
 
-        self.students_label.config(text=f"Total Enrolled Students: {total_students}")
-        self.teachers_label.config(text=f"Total Teachers: {total_teachers}")
-        self.fees_label.config(text=f"Total Fees Collected: ${total_fees:.2f}")
+        self.students_label.configure(text=f"Total Enrolled Students: {total_students}")
+        self.teachers_label.configure(text=f"Total Teachers: {total_teachers}")
+        self.fees_label.configure(text=f"Total Fees Collected: ${total_fees:,.2f}")

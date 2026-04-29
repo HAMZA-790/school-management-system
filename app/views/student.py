@@ -1,61 +1,70 @@
-import tkinter as tk
+import customtkinter as ctk
 from tkinter import ttk, messagebox
-from app.utils.styles import COLORS, FONTS
+from app.utils.styles import FONTS
 from app.services.student_service import StudentService
 
-class StudentView(tk.Frame):
+class StudentView(ctk.CTkFrame):
     def __init__(self, parent, controller):
-        super().__init__(parent)
+        super().__init__(parent, fg_color="transparent")
         self.controller = controller
-        self.configure(bg=COLORS["background"])
         
+        self.grid_rowconfigure(2, weight=1)
+        self.grid_columnconfigure(0, weight=1)
+
         self.create_widgets()
 
     def create_widgets(self):
         # Header
-        header_frame = tk.Frame(self, bg=COLORS["primary"], height=60)
-        header_frame.pack(fill=tk.X)
-        tk.Button(header_frame, text="Back", command=lambda: self.controller.show_frame("DashboardView")).pack(side=tk.LEFT, padx=10, pady=15)
-        tk.Label(header_frame, text="Manage Students", font=FONTS["header"], bg=COLORS["primary"], fg=COLORS["text_light"]).pack(side=tk.LEFT, padx=20, pady=15)
+        header_frame = ctk.CTkFrame(self, fg_color="transparent")
+        header_frame.grid(row=0, column=0, sticky="ew", padx=30, pady=(30, 10))
+        
+        ctk.CTkLabel(header_frame, text="Manage Students", font=FONTS["title"]).pack(side="left")
+        ctk.CTkButton(header_frame, text="Back to Dashboard", command=lambda: self.controller.show_frame("DashboardView"),
+                      fg_color="transparent", border_width=1, text_color=("gray10", "gray90")).pack(side="right")
 
         # Form Frame
-        form_frame = tk.Frame(self, bg=COLORS["background"])
-        form_frame.pack(pady=20)
+        form_frame = ctk.CTkFrame(self, corner_radius=15)
+        form_frame.grid(row=1, column=0, sticky="ew", padx=30, pady=10)
 
-        tk.Label(form_frame, text="Name:", bg=COLORS["background"]).grid(row=0, column=0, padx=5, pady=5)
-        self.name_entry = tk.Entry(form_frame)
-        self.name_entry.grid(row=0, column=1, padx=5, pady=5)
+        self.name_entry = ctk.CTkEntry(form_frame, placeholder_text="Student Name", width=200)
+        self.name_entry.grid(row=0, column=0, padx=20, pady=20)
 
-        tk.Label(form_frame, text="Class:", bg=COLORS["background"]).grid(row=0, column=2, padx=5, pady=5)
-        self.class_entry = tk.Entry(form_frame)
-        self.class_entry.grid(row=0, column=3, padx=5, pady=5)
+        self.class_entry = ctk.CTkEntry(form_frame, placeholder_text="Class", width=150)
+        self.class_entry.grid(row=0, column=1, padx=20, pady=20)
 
-        tk.Label(form_frame, text="Age:", bg=COLORS["background"]).grid(row=0, column=4, padx=5, pady=5)
-        self.age_entry = tk.Entry(form_frame)
-        self.age_entry.grid(row=0, column=5, padx=5, pady=5)
+        self.age_entry = ctk.CTkEntry(form_frame, placeholder_text="Age", width=100)
+        self.age_entry.grid(row=0, column=2, padx=20, pady=20)
 
-        btn_frame = tk.Frame(self, bg=COLORS["background"])
-        btn_frame.pack(pady=10)
-
-        tk.Button(btn_frame, text="Add", command=self.add_student, bg=COLORS["success"], fg=COLORS["text_light"]).pack(side=tk.LEFT, padx=10)
-        tk.Button(btn_frame, text="Update", command=self.update_student, bg=COLORS["warning"]).pack(side=tk.LEFT, padx=10)
-        tk.Button(btn_frame, text="Delete", command=self.delete_student, bg=COLORS["error"], fg=COLORS["text_light"]).pack(side=tk.LEFT, padx=10)
-        tk.Button(btn_frame, text="Clear", command=self.clear_form).pack(side=tk.LEFT, padx=10)
+        ctk.CTkButton(form_frame, text="Add", command=self.add_student, width=100).grid(row=0, column=3, padx=10)
+        ctk.CTkButton(form_frame, text="Update", command=self.update_student, width=100, fg_color="#ffb900", hover_color="#cc9400", text_color="black").grid(row=0, column=4, padx=10)
+        ctk.CTkButton(form_frame, text="Delete", command=self.delete_student, width=100, fg_color="#d83b01", hover_color="#a82d00").grid(row=0, column=5, padx=10)
+        ctk.CTkButton(form_frame, text="Clear", command=self.clear_form, width=100, fg_color="gray", hover_color="darkgray").grid(row=0, column=6, padx=10)
 
         # Treeview (List)
+        table_frame = ctk.CTkFrame(self, corner_radius=15)
+        table_frame.grid(row=2, column=0, sticky="nsew", padx=30, pady=(10, 30))
+        table_frame.pack_propagate(False)
+
+        # Style the ttk Treeview for CustomTkinter
+        style = ttk.Style()
+        style.theme_use("default")
+        style.configure("Treeview", background="#2b2b2b", foreground="white", rowheight=30, fieldbackground="#2b2b2b", borderwidth=0)
+        style.map("Treeview", background=[("selected", "#1f538d")])
+        style.configure("Treeview.Heading", background="#1f538d", foreground="white", font=FONTS["body"])
+
         columns = ("id", "name", "class", "age")
-        self.tree = ttk.Treeview(self, columns=columns, show="headings", height=10)
+        self.tree = ttk.Treeview(table_frame, columns=columns, show="headings")
         self.tree.heading("id", text="ID")
         self.tree.heading("name", text="Name")
         self.tree.heading("class", text="Class")
         self.tree.heading("age", text="Age")
         
-        self.tree.column("id", width=50)
-        self.tree.column("name", width=200)
-        self.tree.column("class", width=100)
-        self.tree.column("age", width=50)
+        self.tree.column("id", width=50, anchor="center")
+        self.tree.column("name", width=250)
+        self.tree.column("class", width=150, anchor="center")
+        self.tree.column("age", width=100, anchor="center")
 
-        self.tree.pack(pady=20, padx=20, fill=tk.BOTH, expand=True)
+        self.tree.pack(fill="both", expand=True, padx=2, pady=2)
         self.tree.bind("<<TreeviewSelect>>", self.on_select)
 
     def refresh(self):
@@ -63,7 +72,7 @@ class StudentView(tk.Frame):
             self.tree.delete(item)
         students = StudentService.get_all_students()
         for s in students:
-            self.tree.insert("", tk.END, values=(s.id, s.name, s.student_class, s.age))
+            self.tree.insert("", "end", values=(s.id, s.name, s.student_class, s.age))
         self.clear_form()
 
     def add_student(self):
@@ -82,7 +91,6 @@ class StudentView(tk.Frame):
 
         success, msg = StudentService.add_student(name, student_class, age)
         if success:
-            messagebox.showinfo("Success", msg)
             self.refresh()
             self.controller.frames["DashboardView"].update_dashboard()
         else:
@@ -113,7 +121,6 @@ class StudentView(tk.Frame):
 
         success, msg = StudentService.update_student(student_id, name, student_class, age)
         if success:
-            messagebox.showinfo("Success", msg)
             self.refresh()
         else:
             messagebox.showerror("Error", msg)
@@ -130,7 +137,6 @@ class StudentView(tk.Frame):
             
             success, msg = StudentService.delete_student(student_id)
             if success:
-                messagebox.showinfo("Success", msg)
                 self.refresh()
                 self.controller.frames["DashboardView"].update_dashboard()
             else:
@@ -147,6 +153,6 @@ class StudentView(tk.Frame):
             self.age_entry.insert(0, values[3])
 
     def clear_form(self):
-        self.name_entry.delete(0, tk.END)
-        self.class_entry.delete(0, tk.END)
-        self.age_entry.delete(0, tk.END)
+        self.name_entry.delete(0, 'end')
+        self.class_entry.delete(0, 'end')
+        self.age_entry.delete(0, 'end')

@@ -9,7 +9,7 @@ class FeeService:
             if not conn: return False, "DB Connection Error"
             cursor = conn.cursor()
             
-            query = "INSERT INTO fees (student_id, amount, date) VALUES (%s, %s, %s)"
+            query = "INSERT INTO fees (student_id, amount, date) VALUES (?, ?, ?)"
             cursor.execute(query, (student_id, amount, date))
             conn.commit()
             return True, "Fee added successfully"
@@ -24,7 +24,7 @@ class FeeService:
         try:
             conn = get_db_connection()
             if not conn: return []
-            cursor = conn.cursor(dictionary=True)
+            cursor = conn.cursor()
             query = """
             SELECT f.id, s.name as student_name, f.amount, f.date 
             FROM fees f 
@@ -32,7 +32,8 @@ class FeeService:
             ORDER BY f.date DESC
             """
             cursor.execute(query)
-            return cursor.fetchall()
+            columns = [column[0] for column in cursor.description]
+            return [dict(zip(columns, row)) for row in cursor.fetchall()]
         except Exception as e:
             logger.error(f"Error fetching fees: {e}")
             return []

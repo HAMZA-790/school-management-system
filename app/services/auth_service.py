@@ -10,13 +10,13 @@ class AuthService:
             if not conn:
                 return None, "Database connection failed."
 
-            cursor = conn.cursor(dictionary=True)
-            query = "SELECT * FROM users WHERE username = %s AND password = %s"
+            cursor = conn.cursor()
+            query = "SELECT id, username FROM users WHERE username = ? AND password = ?"
             cursor.execute(query, (username, password))
             result = cursor.fetchone()
 
             if result:
-                user = User(result['id'], result['username'])
+                user = User(result[0], result[1])
                 return user, "Login successful"
             else:
                 return None, "Invalid username or password."

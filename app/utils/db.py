@@ -1,37 +1,39 @@
-import mysql.connector
-from mysql.connector import Error
+import pyodbc
 from app.utils.logger import logger
 
 class Database:
-    def __init__(self, host="localhost", user="root", password="your_password", database="school_db"):
-        self.host = host
-        self.user = user
-        self.password = password
+    def __init__(self, server=r"localhost", database="school_db"):
+        self.server = server
         self.database = database
+        # Using Windows Authentication by default
+        self.connection_string = f"Driver={{ODBC Driver 17 for SQL Server}};Server={self.server};Database={self.database};Trusted_Connection=yes;"
         self.connection = None
 
     def get_connection(self):
         try:
-            if self.connection and self.connection.is_connected():
-                return self.connection
+            # Check if connection exists and is not closed
+            if self.connection:
+                try:
+                    # Execute a dummy query to test the connection
+                    self.connection.cursor().execute("SELECT 1")
+                    return self.connection
+                except pyodbc.Error:
+                    self.connection = None
             
-            self.connection = mysql.connector.connect(
-                host=self.host,
-                user=self.user,
-                password=self.password,
-                database=self.database
-            )
-            if self.connection.is_connected():
-                logger.info("Successfully connected to the database")
-                return self.connection
-        except Error as e:
-            logger.error(f"Error connecting to MySQL Database: {e}")
+            self.connection = pyodbc.connect(self.connection_string)
+            logger.info("Successfully connected to the database")
+            return self.connection
+        except pyodbc.Error as e:
+            logger.error(f"Error connecting to MSSQL Database: {e}")
             return None
 
     def close_connection(self):
-        if self.connection and self.connection.is_connected():
-            self.connection.close()
-            logger.info("MySQL connection is closed")
+        if self.connection:
+            try:
+                self.connection.close()
+                logger.info("MSSQL connection is closed")
+            except pyodbc.Error:
+                pass
 
 # Singleton instance
 db = Database()

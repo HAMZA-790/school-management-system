@@ -9,7 +9,7 @@ class TeacherService:
             conn = get_db_connection()
             if not conn: return False, "DB Connection Error"
             cursor = conn.cursor()
-            query = "INSERT INTO teachers (name, subject) VALUES (%s, %s)"
+            query = "INSERT INTO teachers (name, subject) VALUES (?, ?)"
             cursor.execute(query, (name, subject))
             conn.commit()
             return True, "Teacher added successfully"
@@ -24,10 +24,10 @@ class TeacherService:
         try:
             conn = get_db_connection()
             if not conn: return []
-            cursor = conn.cursor(dictionary=True)
-            cursor.execute("SELECT * FROM teachers")
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, name, subject FROM teachers")
             results = cursor.fetchall()
-            return [Teacher(row['id'], row['name'], row['subject']) for row in results]
+            return [Teacher(row[0], row[1], row[2]) for row in results]
         except Exception as e:
             logger.error(f"Error fetching teachers: {e}")
             return []
@@ -40,7 +40,7 @@ class TeacherService:
             conn = get_db_connection()
             if not conn: return False, "DB Connection Error"
             cursor = conn.cursor()
-            query = "UPDATE teachers SET name=%s, subject=%s WHERE id=%s"
+            query = "UPDATE teachers SET name=?, subject=? WHERE id=?"
             cursor.execute(query, (name, subject, teacher_id))
             conn.commit()
             return True, "Teacher updated successfully"
@@ -56,7 +56,7 @@ class TeacherService:
             conn = get_db_connection()
             if not conn: return False, "DB Connection Error"
             cursor = conn.cursor()
-            query = "DELETE FROM teachers WHERE id=%s"
+            query = "DELETE FROM teachers WHERE id=?"
             cursor.execute(query, (teacher_id,))
             conn.commit()
             return True, "Teacher deleted successfully"

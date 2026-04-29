@@ -9,7 +9,7 @@ class StudentService:
             conn = get_db_connection()
             if not conn: return False, "DB Connection Error"
             cursor = conn.cursor()
-            query = "INSERT INTO students (name, class, age) VALUES (%s, %s, %s)"
+            query = "INSERT INTO students (name, class, age) VALUES (?, ?, ?)"
             cursor.execute(query, (name, student_class, age))
             conn.commit()
             return True, "Student added successfully"
@@ -24,10 +24,10 @@ class StudentService:
         try:
             conn = get_db_connection()
             if not conn: return []
-            cursor = conn.cursor(dictionary=True)
-            cursor.execute("SELECT * FROM students")
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, name, class, age FROM students")
             results = cursor.fetchall()
-            return [Student(row['id'], row['name'], row['class'], row['age']) for row in results]
+            return [Student(row[0], row[1], row[2], row[3]) for row in results]
         except Exception as e:
             logger.error(f"Error fetching students: {e}")
             return []
@@ -40,7 +40,7 @@ class StudentService:
             conn = get_db_connection()
             if not conn: return False, "DB Connection Error"
             cursor = conn.cursor()
-            query = "UPDATE students SET name=%s, class=%s, age=%s WHERE id=%s"
+            query = "UPDATE students SET name=?, class=?, age=? WHERE id=?"
             cursor.execute(query, (name, student_class, age, student_id))
             conn.commit()
             return True, "Student updated successfully"
@@ -56,7 +56,7 @@ class StudentService:
             conn = get_db_connection()
             if not conn: return False, "DB Connection Error"
             cursor = conn.cursor()
-            query = "DELETE FROM students WHERE id=%s"
+            query = "DELETE FROM students WHERE id=?"
             cursor.execute(query, (student_id,))
             conn.commit()
             return True, "Student deleted successfully"

@@ -1,72 +1,87 @@
-import tkinter as tk
+import customtkinter as ctk
 from tkinter import ttk, messagebox
-from app.utils.styles import COLORS, FONTS
+from app.utils.styles import FONTS
 from app.services.fee_service import FeeService
 from app.services.student_service import StudentService
 
-class FeeView(tk.Frame):
+class FeeView(ctk.CTkFrame):
     def __init__(self, parent, controller):
-        super().__init__(parent)
+        super().__init__(parent, fg_color="transparent")
         self.controller = controller
-        self.configure(bg=COLORS["background"])
         
+        self.grid_rowconfigure(2, weight=1)
+        self.grid_columnconfigure(0, weight=1)
+
         self.create_widgets()
 
     def create_widgets(self):
         # Header
-        header_frame = tk.Frame(self, bg=COLORS["primary"], height=60)
-        header_frame.pack(fill=tk.X)
-        tk.Button(header_frame, text="Back", command=lambda: self.controller.show_frame("DashboardView")).pack(side=tk.LEFT, padx=10, pady=15)
-        tk.Label(header_frame, text="Manage Fees", font=FONTS["header"], bg=COLORS["primary"], fg=COLORS["text_light"]).pack(side=tk.LEFT, padx=20, pady=15)
+        header_frame = ctk.CTkFrame(self, fg_color="transparent")
+        header_frame.grid(row=0, column=0, sticky="ew", padx=30, pady=(30, 10))
+        
+        ctk.CTkLabel(header_frame, text="Manage Fees", font=FONTS["title"]).pack(side="left")
+        ctk.CTkButton(header_frame, text="Back to Dashboard", command=lambda: self.controller.show_frame("DashboardView"),
+                      fg_color="transparent", border_width=1, text_color=("gray10", "gray90")).pack(side="right")
 
         # Form Frame
-        form_frame = tk.Frame(self, bg=COLORS["background"])
-        form_frame.pack(pady=20)
+        form_frame = ctk.CTkFrame(self, corner_radius=15)
+        form_frame.grid(row=1, column=0, sticky="ew", padx=30, pady=10)
 
-        tk.Label(form_frame, text="Student:", bg=COLORS["background"]).grid(row=0, column=0, padx=5, pady=5)
-        self.student_combo = ttk.Combobox(form_frame, state="readonly", width=25)
-        self.student_combo.grid(row=0, column=1, padx=5, pady=5)
+        self.student_combo = ctk.CTkComboBox(form_frame, values=[], width=250)
+        self.student_combo.grid(row=0, column=0, padx=20, pady=20)
 
-        tk.Label(form_frame, text="Amount:", bg=COLORS["background"]).grid(row=0, column=2, padx=5, pady=5)
-        self.amount_entry = tk.Entry(form_frame, width=10)
-        self.amount_entry.grid(row=0, column=3, padx=5, pady=5)
+        self.amount_entry = ctk.CTkEntry(form_frame, placeholder_text="Amount", width=150)
+        self.amount_entry.grid(row=0, column=1, padx=20, pady=20)
 
-        tk.Label(form_frame, text="Date (YYYY-MM-DD):", bg=COLORS["background"]).grid(row=0, column=4, padx=5, pady=5)
-        self.date_entry = tk.Entry(form_frame)
-        self.date_entry.insert(0, "2023-01-01")
-        self.date_entry.grid(row=0, column=5, padx=5, pady=5)
+        self.date_entry = ctk.CTkEntry(form_frame, placeholder_text="YYYY-MM-DD", width=150)
+        self.date_entry.grid(row=0, column=2, padx=20, pady=20)
 
-        tk.Button(form_frame, text="Add Fee", command=self.add_fee, bg=COLORS["success"], fg=COLORS["text_light"]).grid(row=0, column=6, padx=15)
+        ctk.CTkButton(form_frame, text="Add Fee", command=self.add_fee, width=150, fg_color="#107c10", hover_color="#0b5a0b").grid(row=0, column=3, padx=20)
 
         # Treeview
+        table_frame = ctk.CTkFrame(self, corner_radius=15)
+        table_frame.grid(row=2, column=0, sticky="nsew", padx=30, pady=(10, 30))
+        table_frame.pack_propagate(False)
+
+        style = ttk.Style()
+        style.theme_use("default")
+        style.configure("Treeview", background="#2b2b2b", foreground="white", rowheight=30, fieldbackground="#2b2b2b", borderwidth=0)
+        style.map("Treeview", background=[("selected", "#1f538d")])
+        style.configure("Treeview.Heading", background="#1f538d", foreground="white", font=FONTS["body"])
+
         columns = ("id", "student_name", "amount", "date")
-        self.tree = ttk.Treeview(self, columns=columns, show="headings", height=10)
+        self.tree = ttk.Treeview(table_frame, columns=columns, show="headings")
         self.tree.heading("id", text="ID")
         self.tree.heading("student_name", text="Student Name")
         self.tree.heading("amount", text="Amount")
         self.tree.heading("date", text="Date")
         
-        self.tree.column("id", width=50)
-        self.tree.column("student_name", width=200)
-        self.tree.column("amount", width=100)
-        self.tree.column("date", width=100)
+        self.tree.column("id", width=50, anchor="center")
+        self.tree.column("student_name", width=250)
+        self.tree.column("amount", width=150, anchor="center")
+        self.tree.column("date", width=150, anchor="center")
 
-        self.tree.pack(pady=20, padx=20, fill=tk.BOTH, expand=True)
+        self.tree.pack(fill="both", expand=True, padx=2, pady=2)
 
     def refresh(self):
         # Update student list
         students = StudentService.get_all_students()
         self.student_mapping = {f"{s.id} - {s.name}": s.id for s in students}
-        self.student_combo['values'] = list(self.student_mapping.keys())
-        if self.student_mapping:
-            self.student_combo.current(0)
+        
+        keys = list(self.student_mapping.keys())
+        if keys:
+            self.student_combo.configure(values=keys)
+            self.student_combo.set(keys[0])
+        else:
+            self.student_combo.configure(values=[])
+            self.student_combo.set("")
 
         # Update fees list
         for item in self.tree.get_children():
             self.tree.delete(item)
         records = FeeService.get_fees()
         for r in records:
-            self.tree.insert("", tk.END, values=(r['id'], r['student_name'], f"${r['amount']:.2f}", r['date']))
+            self.tree.insert("", "end", values=(r['id'], r['student_name'], f"${r['amount']:.2f}", r['date']))
 
     def add_fee(self):
         selection = self.student_combo.get()
@@ -76,18 +91,21 @@ class FeeView(tk.Frame):
         
         student_id = self.student_mapping[selection]
         amount_str = self.amount_entry.get().strip()
-        date = self.date_entry.get()
+        date = self.date_entry.get().strip()
 
         try:
             amount = float(amount_str)
         except ValueError:
             messagebox.showerror("Error", "Amount must be a number")
             return
+            
+        if not date:
+            messagebox.showerror("Error", "Date is required")
+            return
 
         success, msg = FeeService.add_fee(student_id, amount, date)
         if success:
-            messagebox.showinfo("Success", msg)
-            self.amount_entry.delete(0, tk.END)
+            self.amount_entry.delete(0, 'end')
             self.refresh()
             self.controller.frames["DashboardView"].update_dashboard()
         else:

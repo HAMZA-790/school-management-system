@@ -1,38 +1,57 @@
-import tkinter as tk
+import customtkinter as ctk
 from tkinter import messagebox
+from PIL import Image
+import os
 from app.services.auth_service import AuthService
-from app.utils.styles import COLORS, FONTS
+from app.utils.styles import FONTS
 
-class LoginView(tk.Frame):
+class LoginView(ctk.CTkFrame):
     def __init__(self, parent, controller):
-        super().__init__(parent)
+        super().__init__(parent, fg_color="transparent")
         self.controller = controller
-        self.configure(bg=COLORS["background"])
+
+        # Grid configuration to split screen
+        self.grid_columnconfigure(0, weight=1) # Image side
+        self.grid_columnconfigure(1, weight=1) # Form side
+        self.grid_rowconfigure(0, weight=1)
 
         self.create_widgets()
 
     def create_widgets(self):
-        # Title
-        title_label = tk.Label(self, text="School Management System", font=FONTS["title"], bg=COLORS["background"], fg=COLORS["primary"])
-        title_label.pack(pady=(50, 20))
+        # 1. Image Side (Left)
+        image_path = os.path.join(os.path.dirname(__file__), "..", "assets", "login_bg.png")
+        try:
+            # Load image using CTkImage for scaling support
+            bg_image = ctk.CTkImage(light_image=Image.open(image_path),
+                                    dark_image=Image.open(image_path),
+                                    size=(500, 700))
+            image_label = ctk.CTkLabel(self, text="", image=bg_image)
+            image_label.grid(row=0, column=0, sticky="nsew", padx=20, pady=20)
+        except Exception as e:
+            # Fallback if image not found
+            image_label = ctk.CTkLabel(self, text="School Management System\nProfessional Edition", font=FONTS["title"])
+            image_label.grid(row=0, column=0, sticky="nsew")
 
-        # Login Frame
-        login_frame = tk.Frame(self, bg=COLORS["background"])
-        login_frame.pack(pady=20)
+        # 2. Login Form Side (Right)
+        form_frame = ctk.CTkFrame(self, corner_radius=20)
+        form_frame.grid(row=0, column=1, sticky="nsew", padx=(0, 40), pady=40)
+        form_frame.grid_rowconfigure(0, weight=1)
+        form_frame.grid_rowconfigure(6, weight=1)
 
-        # Username
-        tk.Label(login_frame, text="Username:", font=FONTS["body"], bg=COLORS["background"], fg=COLORS["text"]).grid(row=0, column=0, padx=10, pady=10, sticky="e")
-        self.username_entry = tk.Entry(login_frame, font=FONTS["body"])
-        self.username_entry.grid(row=0, column=1, padx=10, pady=10)
+        # Welcome Text
+        ctk.CTkLabel(form_frame, text="Welcome Back!", font=FONTS["title"]).grid(row=1, column=0, pady=(40, 10))
+        ctk.CTkLabel(form_frame, text="Please login to your account", font=FONTS["body"], text_color="gray").grid(row=2, column=0, pady=(0, 40))
 
-        # Password
-        tk.Label(login_frame, text="Password:", font=FONTS["body"], bg=COLORS["background"], fg=COLORS["text"]).grid(row=1, column=0, padx=10, pady=10, sticky="e")
-        self.password_entry = tk.Entry(login_frame, font=FONTS["body"], show="*")
-        self.password_entry.grid(row=1, column=1, padx=10, pady=10)
+        # Inputs
+        self.username_entry = ctk.CTkEntry(form_frame, placeholder_text="Username", width=300, height=45, font=FONTS["body"])
+        self.username_entry.grid(row=3, column=0, pady=(0, 20))
+
+        self.password_entry = ctk.CTkEntry(form_frame, placeholder_text="Password", width=300, height=45, show="*", font=FONTS["body"])
+        self.password_entry.grid(row=4, column=0, pady=(0, 30))
 
         # Login Button
-        login_btn = tk.Button(login_frame, text="Login", font=FONTS["button"], bg=COLORS["primary"], fg=COLORS["text_light"], command=self.handle_login, width=15)
-        login_btn.grid(row=2, column=0, columnspan=2, pady=20)
+        login_btn = ctk.CTkButton(form_frame, text="LOGIN", font=FONTS["button"], width=300, height=45, corner_radius=8, command=self.handle_login)
+        login_btn.grid(row=5, column=0, pady=(0, 40))
 
     def handle_login(self):
         username = self.username_entry.get().strip()
@@ -44,10 +63,8 @@ class LoginView(tk.Frame):
 
         user, message = AuthService.login(username, password)
         if user:
-            messagebox.showinfo("Success", message)
-            self.username_entry.delete(0, tk.END)
-            self.password_entry.delete(0, tk.END)
-            # Make sure DashboardView is loaded when app starts
+            self.username_entry.delete(0, 'end')
+            self.password_entry.delete(0, 'end')
             self.controller.frames["DashboardView"].update_dashboard()
             self.controller.show_frame("DashboardView")
         else:
