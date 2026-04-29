@@ -1,0 +1,81 @@
+from app.utils.db import get_db_connection
+from app.models.student_model import Student
+from app.utils.logger import logger
+
+class StudentService:
+    @staticmethod
+    def add_student(name, student_class, age):
+        try:
+            conn = get_db_connection()
+            if not conn: return False, "DB Connection Error"
+            cursor = conn.cursor()
+            query = "INSERT INTO students (name, class, age) VALUES (%s, %s, %s)"
+            cursor.execute(query, (name, student_class, age))
+            conn.commit()
+            return True, "Student added successfully"
+        except Exception as e:
+            logger.error(f"Error adding student: {e}")
+            return False, str(e)
+        finally:
+            if 'cursor' in locals() and cursor: cursor.close()
+
+    @staticmethod
+    def get_all_students():
+        try:
+            conn = get_db_connection()
+            if not conn: return []
+            cursor = conn.cursor(dictionary=True)
+            cursor.execute("SELECT * FROM students")
+            results = cursor.fetchall()
+            return [Student(row['id'], row['name'], row['class'], row['age']) for row in results]
+        except Exception as e:
+            logger.error(f"Error fetching students: {e}")
+            return []
+        finally:
+            if 'cursor' in locals() and cursor: cursor.close()
+
+    @staticmethod
+    def update_student(student_id, name, student_class, age):
+        try:
+            conn = get_db_connection()
+            if not conn: return False, "DB Connection Error"
+            cursor = conn.cursor()
+            query = "UPDATE students SET name=%s, class=%s, age=%s WHERE id=%s"
+            cursor.execute(query, (name, student_class, age, student_id))
+            conn.commit()
+            return True, "Student updated successfully"
+        except Exception as e:
+            logger.error(f"Error updating student: {e}")
+            return False, str(e)
+        finally:
+            if 'cursor' in locals() and cursor: cursor.close()
+
+    @staticmethod
+    def delete_student(student_id):
+        try:
+            conn = get_db_connection()
+            if not conn: return False, "DB Connection Error"
+            cursor = conn.cursor()
+            query = "DELETE FROM students WHERE id=%s"
+            cursor.execute(query, (student_id,))
+            conn.commit()
+            return True, "Student deleted successfully"
+        except Exception as e:
+            logger.error(f"Error deleting student: {e}")
+            return False, str(e)
+        finally:
+            if 'cursor' in locals() and cursor: cursor.close()
+
+    @staticmethod
+    def get_total_students():
+        try:
+            conn = get_db_connection()
+            if not conn: return 0
+            cursor = conn.cursor()
+            cursor.execute("SELECT COUNT(*) FROM students")
+            return cursor.fetchone()[0]
+        except Exception as e:
+            logger.error(f"Error getting total students: {e}")
+            return 0
+        finally:
+            if 'cursor' in locals() and cursor: cursor.close()

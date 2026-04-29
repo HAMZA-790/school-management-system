@@ -1,0 +1,55 @@
+from app.utils.db import get_db_connection
+from app.utils.logger import logger
+
+class FeeService:
+    @staticmethod
+    def add_fee(student_id, amount, date):
+        try:
+            conn = get_db_connection()
+            if not conn: return False, "DB Connection Error"
+            cursor = conn.cursor()
+            
+            query = "INSERT INTO fees (student_id, amount, date) VALUES (%s, %s, %s)"
+            cursor.execute(query, (student_id, amount, date))
+            conn.commit()
+            return True, "Fee added successfully"
+        except Exception as e:
+            logger.error(f"Error adding fee: {e}")
+            return False, str(e)
+        finally:
+            if 'cursor' in locals() and cursor: cursor.close()
+
+    @staticmethod
+    def get_fees():
+        try:
+            conn = get_db_connection()
+            if not conn: return []
+            cursor = conn.cursor(dictionary=True)
+            query = """
+            SELECT f.id, s.name as student_name, f.amount, f.date 
+            FROM fees f 
+            JOIN students s ON f.student_id = s.id
+            ORDER BY f.date DESC
+            """
+            cursor.execute(query)
+            return cursor.fetchall()
+        except Exception as e:
+            logger.error(f"Error fetching fees: {e}")
+            return []
+        finally:
+            if 'cursor' in locals() and cursor: cursor.close()
+
+    @staticmethod
+    def get_total_fees():
+        try:
+            conn = get_db_connection()
+            if not conn: return 0.0
+            cursor = conn.cursor()
+            cursor.execute("SELECT SUM(amount) FROM fees")
+            result = cursor.fetchone()[0]
+            return float(result) if result else 0.0
+        except Exception as e:
+            logger.error(f"Error getting total fees: {e}")
+            return 0.0
+        finally:
+            if 'cursor' in locals() and cursor: cursor.close()
